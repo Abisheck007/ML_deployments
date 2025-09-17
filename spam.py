@@ -1,18 +1,6 @@
 import streamlit as st
 import joblib
 import re
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
-
-
-@st.cache_resource
-def download_nltk_data():
-    nltk.download('punkt')
-    nltk.download('stopwords')
-    nltk.download('wordnet')
-
-download_nltk_data()
 
 # Load the trained model, vectorizer, and label encoder
 try:
@@ -23,69 +11,31 @@ except FileNotFoundError:
     st.error("Model, vectorizer, or label encoder files not found. Please ensure they are saved in the correct location.")
     st.stop()
 
-lemmatizer = WordNetLemmatizer()
-stop_words = set(stopwords.words('english'))
-
 def preprocess_sms(sms_text):
     """
-    Applies the defined preprocessing steps to a single SMS message.
-
-    Args:
-        sms_text (str): The input SMS message string.
-
-    Returns:
-        str: The processed text string, ready for vectorization.
+    Applies preprocessing steps to a single SMS message:
+    - Removes special characters and numbers
+    - Lowercases the text
     """
-    # 1. Remove special characters and numbers
-    cleaned_text = re.sub(r'[^a-zA-Z\s]', '', sms_text)
-    cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
-
-    # 2. Tokenization
-    tokens = nltk.word_tokenize(cleaned_text)
-
-    # 3. Removing Stopwords
-    tokens = [word for word in tokens if word.lower() not in stop_words]
-
-    # 4. Lemmatization
-    tokens = [lemmatizer.lemmatize(word, pos='v') for word in tokens]
-
-    # Convert tokens back to a string for vectorization
-    processed_text = ' '.join(tokens)
-
-    return processed_text
+    cleaned_text = re.sub(r'[^a-zA-Z\s]', '', sms_text)  # Keep only letters and spaces
+    cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()  # Remove extra spaces
+    return cleaned_text.lower()
 
 def predict_sms(sms_text, model, vectorizer, label_encoder):
     """
     Predicts whether a new SMS message is spam or ham.
-
-    Args:
-        sms_text (str): The input SMS message string.
-        model: The trained Logistic Regression model.
-        vectorizer: The fitted TF-IDF vectorizer.
-        label_encoder: The fitted Label Encoder.
-
-
-    Returns:
-        str: 'spam' or 'ham'.
     """
-    # Preprocess the new SMS
     processed_sms = preprocess_sms(sms_text)
-    if not processed_sms: # Handle empty string after preprocessing
+    if not processed_sms: 
         return "Cannot classify empty or highly filtered message."
 
-    # Vectorize the processed SMS
     vectorized_sms = vectorizer.transform([processed_sms])
-
-    # Predict the label
     prediction = model.predict(vectorized_sms)
-
-    # Decode the predicted label back to 'ham' or 'spam'
     predicted_label = label_encoder.inverse_transform(prediction)[0]
-
     return predicted_label
 
 # Streamlit App
-st.title("SMS Spam Detection")
+st.title("📩 SMS Spam Detection")
 
 st.write("Enter an SMS message below to check if it is Spam or Ham.")
 
@@ -100,4 +50,3 @@ if st.button("Predict"):
             st.success(f"Prediction: {prediction.upper()}")
     else:
         st.warning("Please enter an SMS message to predict.")
-

@@ -5,10 +5,14 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
-# Download necessary NLTK data
-nltk.download('punkt', quiet=True)
-nltk.download('stopwords', quiet=True)
-nltk.download('wordnet', quiet=True)
+
+@st.cache_resource
+def download_nltk_data():
+    nltk.download('punkt')
+    nltk.download('stopwords')
+    nltk.download('wordnet')
+
+download_nltk_data()
 
 # Load the trained model, vectorizer, and label encoder
 try:
